@@ -3,6 +3,7 @@ import React from "react";
 const Newsitem = (props)=> {
   
     let { title, description, imageUrl, newsUrl, author, date, source} = props;
+    const fallbackImage = `${process.env.PUBLIC_URL}/vc.jpg`;
     return (
       <div className="mt-2">
         <div className="card">
@@ -15,22 +16,22 @@ const Newsitem = (props)=> {
             }}
           >
             <span
-              class=" badge rounded-pill bg-danger"
+              className=" badge rounded-pill bg-danger"
               style={{ left: "90%", zIndex: "1" }}
             >
               {source}
             </span>
           </div>
           <img
-            src={imageUrl ? imageUrl : "/vc.jpg"}
+            src={imageUrl ? imageUrl : fallbackImage}
             className="card-img-top"
             alt="..."
           />
           <div className="card-body">
             <h5 className="card-title">{title}</h5>
             <p className="card-text">{description}...</p>
-            <p class="card-text">
-              <small class="text-muted">
+            <p className="card-text">
+              <small className="text-muted">
                 By {!author ? "Unknown" : author} on{" "}
                 {new Date(date).toGMTString()}
               </small>

@@ -7,7 +7,7 @@ const Navbar = () => {
     <div>
       <nav className="navbar fixed-top navbar-expand-lg bg-body-tertiary">
         <div className="container-fluid">
-          <Link className="navbar-brand" href="#">
+          <Link className="navbar-brand" to="/">
             Navbar
           </Link>
           <button

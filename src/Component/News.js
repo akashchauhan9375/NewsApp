@@ -11,6 +11,27 @@ const News = (props)=> {
   const[totalResults,setTotalResults] = useState(0)
   
 
+  const loadFallbackNews = async () => {
+    const response = await fetch(`${process.env.PUBLIC_URL}/SampleOutput.json`);
+    if (!response.ok) {
+      throw new Error("Fallback news data could not be loaded");
+    }
+
+    return response.json();
+  };
+
+  const getNewsData = async (targetPage) => {
+    const url = `https://newsapi.org/v2/top-headlines?country=${props.country}&category=${props.category}&apiKey=2c38aa8922024b25a99b7c9073bee123&page=${targetPage}&pageSize=${props.pageSize}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!response.ok || !Array.isArray(data.articles)) {
+      return loadFallbackNews();
+    }
+
+    return data;
+  };
+
   
   const capitalize = (word) => {
     return word.charAt(0).toUpperCase() + word.slice(1);
@@ -18,18 +39,21 @@ const News = (props)=> {
   
 
   const updateNews = async()=> {
-    props.setProgress(10)
-    let url = `https://newsapi.org/v2/top-headlines?country=${props.country}&category=${props.category}&apiKey=2c38aa8922024b25a99b7c9073bee123&page=${page}&pageSize=${props.pageSize}`;
-    setLoading(true)
-    let data = await fetch(url);
-    props.setProgress(30);
-    let parsedData = await data.json();
-    props.setProgress(70);
-    setArticles(parsedData.articles)
-    setTotalResults(parsedData.totalResults)
-    setLoading(false)
-    
-    props.setProgress(100)
+    try {
+      props.setProgress(10)
+      setLoading(true)
+      const parsedData = await getNewsData(page);
+      props.setProgress(70);
+      setArticles(Array.isArray(parsedData.articles) ? parsedData.articles : [])
+      setTotalResults(parsedData.totalResults || 0)
+    } catch (error) {
+      console.error("Unable to load news", error);
+      setArticles([])
+      setTotalResults(0)
+    } finally {
+      setLoading(false)
+      props.setProgress(100)
+    }
   }
 
   useEffect(()=>{
@@ -63,15 +87,13 @@ const News = (props)=> {
     let nextPage = page+1
     setPage(nextPage)
 
-    let url = `https://newsapi.org/v2/top-headlines?country=${props.country}&category=${props.category}&apiKey=2c38aa8922024b25a99b7c9073bee123&page=${nextPage}&pageSize=${props.pageSize}`;
-
-    
-
-    let data = await fetch(url);
-
-    let parsedData = await data.json();
-    setArticles(articles.concat(parsedData.articles))
-    setTotalResults(parsedData.totalResults)
+    try {
+      let parsedData = await getNewsData(nextPage);
+      setArticles(articles.concat(Array.isArray(parsedData.articles) ? parsedData.articles : []))
+      setTotalResults(parsedData.totalResults || 0)
+    } catch (error) {
+      console.error("Unable to load more news", error);
+    }
 
     
   };
@@ -83,10 +105,11 @@ const News = (props)=> {
           Money News - Top {capitalize(props.category)} headlines
         </h2>
         
+        {loading && <Spinner />}
         <InfiniteScroll
           dataLength={articles.length}
           next={fetchMoreData}
-          hasMore={articles.length !== totalResults}
+          hasMore={articles.length < totalResults}
           loader={<Spinner />}
         >
           <div className="container">
